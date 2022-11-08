@@ -2,6 +2,11 @@
 
 ## 📝 Notes
 
+`useFetcher` è un hook che al suo interno contiene un componente `Form`.
+Diversamente da quello tradizionale in remix, questo componente non fa una
+navigazione ma esegue una chiamata fetch. Questo componente è stato creato per
+eseguire chiamate fetch in modo asincrono senza dover navigare.
+
 ## 🤓 Background
 
 From the beginning of the web, `<form>` has been how mutations were handled. The
