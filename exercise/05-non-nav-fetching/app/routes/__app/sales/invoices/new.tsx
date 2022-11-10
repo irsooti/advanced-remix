@@ -14,6 +14,7 @@ import { useId, useState } from "react";
 import type { LineItemFields } from "~/models/invoice.server";
 import { createInvoice } from "~/models/invoice.server";
 import { parseDate } from "~/utils";
+import { CustomerCombobox } from "~/routes/resources/customers";
 
 export async function loader({ request }: LoaderArgs) {
   await requireUser(request);
@@ -114,16 +115,16 @@ export default function NewInvoice() {
   const actionData = useActionData<typeof action>();
   return (
     <div className="relative p-10">
-      <h2 className="font-display mb-4">New Invoice</h2>
+      <h2 className="mb-4 font-display">New Invoice</h2>
       <Form method="post" className="flex flex-col gap-4">
-        {/* 🐨 Render the CustomerCombobox here */}
+        <CustomerCombobox error={actionData?.errors.customerId} />
         <div>
           <div className="flex flex-wrap items-center gap-1">
             <label htmlFor="dueDate">
               <LabelText>Due Date</LabelText>
             </label>
             {actionData?.errors.dueDate ? (
-              <em id="dueDate-error" className="text-d-p-xs text-red-600">
+              <em id="dueDate-error" className="text-red-600 text-d-p-xs">
                 {actionData.errors.dueDate}
               </em>
             ) : null}
@@ -199,7 +200,7 @@ function LineItemFormFields({
   const actionData = useActionData<typeof action>();
   const errors = actionData?.errors.lineItems[lineItemClientId];
   return (
-    <fieldset key={lineItemClientId} className="border-b-2 py-2">
+    <fieldset key={lineItemClientId} className="py-2 border-b-2">
       <div className="flex gap-2">
         <button type="button" title="Remove Line Item" onClick={onRemoveClick}>
           <MinusIcon />
@@ -217,7 +218,7 @@ function LineItemFormFields({
                 </label>
               </LabelText>
               {errors?.quantity ? (
-                <em id="quantity-error" className="text-d-p-xs text-red-600">
+                <em id="quantity-error" className="text-red-600 text-d-p-xs">
                   {errors.quantity}
                 </em>
               ) : null}
@@ -239,7 +240,7 @@ function LineItemFormFields({
                 </label>
               </LabelText>
               {errors?.unitPrice ? (
-                <em id="unitPrice-error" className="text-d-p-xs text-red-600">
+                <em id="unitPrice-error" className="text-red-600 text-d-p-xs">
                   {errors.unitPrice}
                 </em>
               ) : null}
@@ -277,8 +278,8 @@ export function ErrorBoundary({ error }: { error: Error }) {
   console.error(error);
 
   return (
-    <div className="absolute inset-0 flex justify-center bg-red-100 pt-4">
-      <div className="text-red-brand text-center">
+    <div className="absolute inset-0 flex justify-center pt-4 bg-red-100">
+      <div className="text-center text-red-brand">
         <div className="text-[14px] font-bold">Oh snap!</div>
         <div className="px-2 text-[12px]">There was a problem. Sorry.</div>
       </div>
