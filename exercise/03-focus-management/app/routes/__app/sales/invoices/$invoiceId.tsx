@@ -196,14 +196,22 @@ function Deposits() {
     if (newDepositFetcher.state !== "idle") return;
 
     // 🐨 If there's an error on the amount, focus the amount element
+    if (errors?.amount) {
+      return formRef.current.elements.amount?.focus();
+    }
 
     // 🐨 If there's an error on the desposit date, focus the depositDate element
+    if (errors?.depositDate) {
+      return formRef.current.elements.depositDate?.focus();
+    }
 
     // 🐨 Focus on the amount field
     // 💯 In what situation would we want to *not* change focus and *not* reset the form at this point?
-
-    formRef.current.reset();
-  }, [newDepositFetcher.state]);
+    if (document.activeElement === formRef.current.elements.intent) {
+      formRef.current.elements.amount?.focus();
+      formRef.current.reset();
+    }
+  }, [errors?.amount, errors?.depositDate, newDepositFetcher.state]);
 
   return (
     <div>
@@ -235,7 +243,7 @@ function Deposits() {
               <label htmlFor="depositAmount">Amount</label>
             </LabelText>
             {errors?.amount ? (
-              <em id="amount-error" className="text-d-p-xs text-red-600">
+              <em id="amount-error" className="text-red-600 text-d-p-xs">
                 {errors.amount}
               </em>
             ) : null}
@@ -258,7 +266,7 @@ function Deposits() {
               <label htmlFor="depositDate">Date</label>
             </LabelText>
             {errors?.depositDate ? (
-              <em id="depositDate-error" className="text-d-p-xs text-red-600">
+              <em id="depositDate-error" className="text-red-600 text-d-p-xs">
                 {errors.depositDate}
               </em>
             ) : null}
@@ -340,8 +348,8 @@ export function ErrorBoundary({ error }: { error: Error }) {
   console.error(error);
 
   return (
-    <div className="absolute inset-0 flex justify-center bg-red-100 pt-4">
-      <div className="text-red-brand text-center">
+    <div className="absolute inset-0 flex justify-center pt-4 bg-red-100">
+      <div className="text-center text-red-brand">
         <div className="text-[14px] font-bold">Oh snap!</div>
         <div className="px-2 text-[12px]">There was a problem. Sorry.</div>
       </div>
