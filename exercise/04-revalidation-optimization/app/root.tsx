@@ -1,5 +1,8 @@
+import { Dialog } from "@reach/dialog";
+import reachDialogStylesheet from "@reach/dialog/styles.css";
 import type { LinksFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import type { ShouldReloadFunction } from "@remix-run/react";
 import {
   Links,
   LiveReload,
@@ -12,12 +15,10 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Dialog } from "@reach/dialog";
-import reachDialogStylesheet from "@reach/dialog/styles.css";
 import { getUser } from "./session.server";
 
-import tailwindStylesheetUrl from "./styles/tailwind.css";
 import { dangerButtonClasses, submitButtonClasses } from "./components";
+import tailwindStylesheetUrl from "./styles/tailwind.css";
 
 export const links: LinksFunction = () => {
   return [
@@ -36,6 +37,16 @@ export async function loader({ request }: LoaderArgs) {
     user: await getUser(request),
   });
 }
+
+export const unstable_shouldReload: ShouldReloadFunction = ({
+  params,
+  submission,
+}) => {
+  return !!(
+    submission &&
+    (submission.action === "/login" || submission.action === "/logout")
+  );
+};
 
 export default function App() {
   const { user } = useLoaderData<typeof loader>();
@@ -100,7 +111,7 @@ function LogoutTimer() {
       onDismiss={closeModal}
     >
       <div>
-        <h1 className="text-d-h3 mb-4">Are you still there?</h1>
+        <h1 className="mb-4 text-d-h3">Are you still there?</h1>
         <p>
           You are going to be logged out due to inactivity. Close this modal to
           stay logged in.
