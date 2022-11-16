@@ -1,8 +1,15 @@
-import type { LoaderArgs } from "@remix-run/node";
+import { defer, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useCatch, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Await,
+  Link,
+  useCatch,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
+import { Suspense } from "react";
 import invariant from "tiny-invariant";
-import { ErrorFallback } from "~/components";
+import { ErrorFallback, InvoiceDetailsFallback } from "~/components";
 import { getCustomerDetails, getCustomerInfo } from "~/models/customer.server";
 import { requireUser } from "~/session.server";
 import { currencyFormatter } from "~/utils";
@@ -17,17 +24,17 @@ export async function loader({ request, params }: LoaderArgs) {
   // The customerDetails are slow, so let's defer that.
   // 🐨 Change this from a Promise.all to two separate calls
   // 🐨 Await the customer info, and not the customer details (so the value of customerDetails will be a promise).
-  const [customerInfo, customerDetails] = await Promise.all([
-    getCustomerInfo(customerId),
-    getCustomerDetails(customerId),
-  ]);
+  const customerInfo = await getCustomerInfo(customerId);
   // 🐨 we no longer can determine at this stage whether or not there are
   // `customerDetails`, so remove that from this if statement
-  if (!customerDetails || !customerInfo) {
+  if (!customerInfo) {
     throw new Response("not found", { status: 404 });
   }
+
+  const customerDetails = getCustomerDetails(customerId);
+
   // 🐨 change this from "json" to "defer" (from @remix-run/node)
-  return json({
+  return defer({
     customerInfo,
     customerDetails, // this should be assigned to a promise
   });
@@ -47,7 +54,7 @@ export default function CustomerRoute() {
         {data.customerInfo.name}
       </div>
       <div className="h-4" />
-      <div className="text-m-h3 font-bold leading-8">Invoices</div>
+      <div className="font-bold leading-8 text-m-h3">Invoices</div>
       <div className="h-4" />
       {/*
         🐨 Wrap this in <Suspense><Await /></Suspense> components with:
@@ -55,38 +62,47 @@ export default function CustomerRoute() {
         - Await "resolve" prop as data.invoiceDetails
         - Await "errorElement" prop can be the ErrorFallback component (imported from "~/components")
       */}
-      <table className="w-full">
-        <tbody>
-          {data.customerDetails.invoiceDetails.map((details) => (
-            <tr key={details.id} className={lineItemClassName}>
-              <td>
-                <Link
-                  className="text-blue-600 underline"
-                  to={`../../invoices/${details.id}`}
-                >
-                  {details.number}
-                </Link>
-              </td>
-              <td
-                className={
-                  "text-center uppercase" +
-                  " " +
-                  (details.dueStatus === "paid"
-                    ? "text-green-brand"
-                    : details.dueStatus === "overdue"
-                    ? "text-red-brand"
-                    : "")
-                }
-              >
-                {details.dueStatusDisplay}
-              </td>
-              <td className="text-right">
-                {currencyFormatter.format(details.totalAmount)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <Suspense fallback={<InvoiceDetailsFallback />}>
+        <Await resolve={data.customerDetails} errorElement={<ErrorFallback />}>
+          {(customerDetails) => (
+            <table className="w-full">
+              <tbody>
+                {customerDetails
+                  ? customerDetails.invoiceDetails.map((details) => (
+                      <tr key={details.id} className={lineItemClassName}>
+                        <td>
+                          <Link
+                            className="text-blue-600 underline"
+                            to={`../../invoices/${details.id}`}
+                          >
+                            {details.number}
+                          </Link>
+                        </td>
+                        <td
+                          className={
+                            "text-center uppercase" +
+                            " " +
+                            (details.dueStatus === "paid"
+                              ? "text-green-brand"
+                              : details.dueStatus === "overdue"
+                              ? "text-red-brand"
+                              : "")
+                          }
+                        >
+                          {details.dueStatusDisplay}
+                        </td>
+                        <td className="text-right">
+                          {currencyFormatter.format(details.totalAmount)}
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+              </tbody>
+            </table>
+          )}
+        </Await>
+      </Suspense>
     </div>
   );
 }
