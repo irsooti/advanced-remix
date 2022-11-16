@@ -1,6 +1,7 @@
 import type { LinksFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { ShouldReloadFunction } from "@remix-run/react";
+import type { ShouldReloadFunction} from "@remix-run/react";
+import { useSubmit } from "@remix-run/react";
 import {
   Links,
   LiveReload,
@@ -60,6 +61,7 @@ function LogoutTimer() {
   const [status, setStatus] = useState<"idle" | "show-modal">("idle");
   const location = useLocation();
   // 🐨 add the useSubmit hook here so you can trigger a logout
+  const submit = useSubmit();
 
   // I've shortened the logoutTime and modalTime with these to test this more easily:
   const logoutTime = 5000;
@@ -71,10 +73,14 @@ function LogoutTimer() {
 
   const logout = useCallback(() => {
     // 🐨 log the user out by submitting to /logout
+    const formData = new FormData();
+    formData.append("redirectTo", location.pathname);
+
+    submit(formData, { method: "post", action: "/logout" });
     // 🐨 provide the `redirectTo` value as part of the body of
     // the request so after the user logs in again they will be
     // right back where they left off
-  }, []);
+  }, [location.pathname, submit]);
 
   const cleanupTimers = useCallback(() => {
     clearTimeout(modalTimer.current);
@@ -104,7 +110,7 @@ function LogoutTimer() {
       onDismiss={closeModal}
     >
       <div>
-        <h1 className="text-d-h3 mb-4">Are you still there?</h1>
+        <h1 className="mb-4 text-d-h3">Are you still there?</h1>
         <p>
           You are going to be logged out due to inactivity. Close this modal to
           stay logged in.
